@@ -2,9 +2,9 @@
 
 module convolver (clk,ce,weight1,global_rst,activation,conv_op,end_conv,valid_conv);
 
-parameter n = 9'h00a;     // activation map size
-parameter k = 9'h003;     // kernel size 
-parameter s = 1;          // value of stride (horizontal and vertical stride are equal)
+parameter n = 9'h00a;     
+parameter k = 9'h003;     
+parameter s = 1;          
 input clk,ce,global_rst;
 input [15:0] activation;
 input wire [(k*k)*16-1:0] weight1;
@@ -26,25 +26,25 @@ generate
 genvar i;
   for(i = 0;i<k*k;i=i+1)
   begin: MAC
-    if((i+1)%k ==0)                      //end of the row
-    begin
-      if(i==k*k-1)                        //end of convolver
-      begin
-      mac_manual mac(                     //implements a*b+c
-        .clk(clk),                        // input clk
-        .ce(ce),                          // input ce
-        .sclr(global_rst),                // input sclr
-        .a(activation),                   // activation input [15 : 0] a
-        .b(weight[i]),                    // weight input [15 : 0] b
-        .c(tmp[i]),                       // previous mac sum input [32 : 0] c
-        .p(conv_op)                       // output [32 : 0] p
-        );
+    if((i+1)%k ==0)                      
+        begin
+      if(i==k*k-1)                        
+            begin
+      mac_manual mac(                     
+              .clk(clk),                        
+              .ce(ce),                          
+              .sclr(global_rst),                
+              .a(activation),                   
+              .b(weight[i]),                    
+              .c(tmp[i]),                       
+              .p(conv_op)                       
+              );
       end
       else
       begin
       wire [32:0] tmp2;
-      //make a mac unit
-      mac_manual mac(                   
+      
+            mac_manual mac(                   
         .clk(clk), 
         .ce(ce), 
         .sclr(global_rst), 
@@ -55,12 +55,12 @@ genvar i;
         );
       
       variable_shift_reg #(.WIDTH(33),.SIZE(n-k)) SR (
-          .d(tmp2),                  // input [32 : 0] d
-          .clk(clk),                 // input clk
-          .ce(ce),                   // input ce
-          .rst(global_rst),          // input sclr
-          .out(tmp[i+1])             // output [32 : 0] q
-          );
+          .d(tmp2),                  
+                    .clk(clk),                 
+                    .ce(ce),                   
+                    .rst(global_rst),          
+                    .out(tmp[i+1])             
+                    );
       end
     end
     else
@@ -86,18 +86,18 @@ always@(posedge clk)
 begin
   if(global_rst)
   begin
-    count <=0;                      //master counter: counts the clock cycles
-    count2<=0;                      //counts the valid convolution outputs
-    count3<=0;                      // counts the number of invalid onvolutions where the kernel wraps around the next row of inputs.
-    row_count <= 0;                 //counts the number of rows of the output.  
-    en1<=0;
+    count <=0;                      
+        count2<=0;                      
+        count3<=0;                      
+        row_count <= 0;                 
+        en1<=0;
     en2<=1;
     en3<=0;
   end
   else if(ce)
   begin
-    if(count == (k-1)*n+k-1)   // time taken for the pipeline to fill up is (k-1)*n+k-1
-    begin
+    if(count == (k-1)*n+k-1)   
+        begin
       en1 <= 1'b1;
       count <= count+1'b1;
     end
@@ -132,9 +132,9 @@ begin
   end
   
   if((((count2 + 1) % s == 0) && (row_count % s == 0))||(count3 == k-2)&&(row_count % s == 0)||(count == (k-1)*n+k-1))
-  begin                                                                                                                        //one in every s convolutions becomes valid
-    en3 <= 1;                                                                                                                    //some exceptional cases handled for high when count2 = 0                
-  end
+  begin                                                                                                                        
+      en3 <= 1;                                                                                                                    
+    end
   else 
     en3 <= 0;
 end
