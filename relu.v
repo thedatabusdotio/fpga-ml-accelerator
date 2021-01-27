@@ -1,7 +1,9 @@
 `timescale 1ns / 1ps
-module relu(
-    input [31:0] din_relu,
-    output [31:0] dout_relu
+
+module relu #(parameter N = 16)(
+    input [N-1:0] din_relu,
+    output [N-1:0] dout_relu
     );
-assign dout_relu = (din_relu[30] == 0)? din_relu : 0;
+assign dout_relu = (din_relu[N-1] == 0)? din_relu : 0;
+
 endmodule

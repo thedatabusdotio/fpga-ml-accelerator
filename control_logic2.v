@@ -1,7 +1,20 @@
 `timescale 1ns / 1ps
 
+//1. normal case : just store the max value in the register.  
+//2. end of one neighbourhood: store the max value to the shift register.
+//3. end of row: store the max value in the shift register and then load the max register from the shift register.
+//4. end of neighbourhood in the last row: make output valid and store the max value in the max register.
+//5. end of last neighbourhood of last row: make op valid and store the max value in the max register and then reset the entire module.
 
-control_logic2(
+//SIGNALS TO BE HANDLED IN EACH CASE
+//CASE               1		 2		 3 	 	 4		 5 
+//1. load _sr       low	    high	high	high	low			
+//2. sel			low		low	   	high	high	low
+//3. rst_m			low		high	low		low		low
+//4. op_en			low		low		low		high	high
+//5. global_rst		low		low		low		low		high
+
+module control_logic2(
     input clk,
     input master_rst,
     input ce,
@@ -30,7 +43,7 @@ control_logic2(
         end_op <=0;
         end
         else begin
-        if(((col_count+1)%p !=0)&&(row_count == p-1)&&(col_count == p*count+ (p-2))&&ce)   
+        if(((col_count+1)%p !=0)&&(row_count == p-1)&&(col_count == p*count + (p-2))&&ce)   //op_en
         begin     
         op_en <=1;
         end 
@@ -39,8 +52,8 @@ control_logic2(
         end
             if(ce) 
             begin
-                if(nbgh_row_count == m/p)    
-                        begin     
+                if(nbgh_row_count == m/p)    //end_op 
+                begin     
                     end_op <=1;
                 end
                 else 
@@ -48,10 +61,10 @@ control_logic2(
                     end_op <=0;
                 end
 
-                if(((col_count+1) % p != 0)&&(col_count == m-2)&&(row_count == p-1)) 
-                        begin   
-                    global_rst <= 1;                           
-                            end
+                if(((col_count+1) % p != 0)&&(col_count == m-2)&&(row_count == p-1)) //global_rst and pause_ip
+                begin   
+                    global_rst <= 1;                           //  (reset everything)
+                end
                 else 
                 begin
                     global_rst <= 0;
@@ -59,9 +72,10 @@ control_logic2(
                 
                 
 
-                
-                         if((((col_count+1) % p == 0)&&(count != m/p-1)&&(row_count != p-1))||((col_count == m-1)&&(row_count == p-1)))     
-                        begin    
+                //end
+
+                if((((col_count+1) % p == 0)&&(count != m/p-1)&&(row_count != p-1))||((col_count == m-1)&&(row_count == p-1)))     //rst_m
+                begin    
                   rst_m <= 1;              
                 end  
                 else 
@@ -75,8 +89,8 @@ control_logic2(
                 end
                 else 
                 begin
-                    if((((col_count) % p == 0)&&(count == m/p-1)&&(row_count != p-1))|| (((col_count) % p == 0)&&(count != m/p-1)&&(row_count == p-1))) begin     
-                                    sel<=2'b01;
+                    if((((col_count) % p == 0)&&(count == m/p-1)&&(row_count != p-1))|| (((col_count) % p == 0)&&(count != m/p-1)&&(row_count == p-1))) begin     //sel
+                        sel<=2'b01;
                     end 
                     else 
                     begin
@@ -84,10 +98,10 @@ control_logic2(
                     end
                 end
 
-                if((((col_count+1) % p == 0)&&((count == m/p-1)))||((col_count+1) % p == 0)&&((count != m/p-1))) 
-                        begin     
-                    load_sr <= 1;                                 
-                            end 
+                if((((col_count+1) % p == 0)&&((count == m/p-1)))||((col_count+1) % p == 0)&&((count != m/p-1))) //load_sr
+                begin     
+                    load_sr <= 1;                                 //&&(row_count!=p-1)
+                end 
                 else 
                 begin
                     load_sr <= 0;
@@ -96,8 +110,8 @@ control_logic2(
         end 
     end 
 
-    always@(posedge clk) begin            
-    if(master_rst) begin
+    always@(posedge clk) begin            //counters
+        if(master_rst) begin
             row_count <=0;
             col_count <=32'hffffffff;
             count <=32'hffffffff;
@@ -110,14 +124,14 @@ control_logic2(
                 if(global_rst)
                 begin
                    row_count <=0;
-                   col_count <=32'h0;
-                              count <=32'h0;
-                              nbgh_row_count <= nbgh_row_count + 1'b1; 
+                   col_count <=32'h0;//ffffffff;
+                   count <=32'h0;//ffffffff;
+                   nbgh_row_count <= nbgh_row_count + 1'b1; 
                 end
                 else
                 begin
-                    if(((col_count+1) % p == 0)&&(count == m/p-1)&&(row_count != p-1)) 
-                                begin
+                    if(((col_count+1) % p == 0)&&(count == m/p-1)&&(row_count != p-1)) //col_count and row_count
+                    begin
                         col_count <= 0;
                         row_count <= row_count + 1'b1;
                         count <=0;

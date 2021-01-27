@@ -15,13 +15,12 @@ for(i=0;i<SIZE;i=i+1)
 begin
     always@(posedge clk or posedge rst)
     begin
-    if(ce)
+    if(rst)
     begin
-        if(rst)
+        sr[i] <= 'd0;
+    end
+    else if(ce)
         begin
-            sr[i] <= 'd0;
-        end
-        else
             if(i == 'd0)
             begin
                 sr[i] <= d;
@@ -30,13 +29,7 @@ begin
             begin
                 sr[i] <= sr[i-1];
             end
-        begin
         end
-     end
-     else
-     begin
-        sr[i] <= 'd0;
-     end
     end
 end
 
